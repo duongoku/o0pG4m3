@@ -37,7 +37,7 @@ public class GameScene extends SceneManager{
     private int botCount;
     private Obstacle myObstacle;
 
-    public GameScene(String mapPath, Charakter[] playerList, int playerCount, Charakter[] botList, BufferStrategy bs, ImageObserver observer, SoundHandler sound) {
+    public GameScene(String mapPath, Charakter[] playerList, int playerCount, Charakter[] botList, int botCount, BufferStrategy bs, ImageObserver observer, SoundHandler sound) {
         super(bs, observer, sound);
         myBomb = new Bomb();
         myTile = new Tile();
@@ -46,7 +46,7 @@ public class GameScene extends SceneManager{
         this.playerList = playerList;
         this.playerCount = playerCount;
         this.botList = botList;
-        botCount = botList.length;
+        this.botCount = botCount;
         myHUD = new Hud();
         loadMap(mapPath);
     }
@@ -132,14 +132,14 @@ public class GameScene extends SceneManager{
         sc.close();
     }
 
-    public void keyPressed(KeyEvent e, Charakter player) {
-        if(e.getKeyCode() == player.KEY_UP
-        || e.getKeyCode() == player.KEY_DOWN
-        || e.getKeyCode() == player.KEY_LEFT
-        || e.getKeyCode() == player.KEY_RIGHT) {
-            player.addDirectionID(e.getKeyCode());
+    public void keyPressed(int keyCode, Charakter player) {
+        if(keyCode == player.KEY_UP
+        || keyCode == player.KEY_DOWN
+        || keyCode == player.KEY_LEFT
+        || keyCode == player.KEY_RIGHT) {
+            player.addDirectionID(keyCode);
         }
-        if(e.getKeyCode() == player.KEY_BOMB) {
+        if(keyCode == player.KEY_BOMB) {
             int xID = player.getXID(blockW);
             int yID = player.getYID(blockH);
             if(bombMap[yID][xID] == null) {
@@ -151,20 +151,36 @@ public class GameScene extends SceneManager{
         }
     }
 
-    public void keyReleased(KeyEvent e, Charakter player) {
-        if(e.getKeyCode() == player.KEY_UP
-        || e.getKeyCode() == player.KEY_DOWN
-        || e.getKeyCode() == player.KEY_LEFT
-        || e.getKeyCode() == player.KEY_RIGHT) {
-            player.removeDirectionID(e.getKeyCode());
+    public void keyReleased(int keyCode, Charakter player) {
+        if(keyCode == player.KEY_UP
+        || keyCode == player.KEY_DOWN
+        || keyCode == player.KEY_LEFT
+        || keyCode == player.KEY_RIGHT) {
+            player.removeDirectionID(keyCode);
         }
     }
 
     public boolean isEnded() {
-        for(int i=0;i<playerCount;i++) {
-            if(playerList[i].getDieFrame() == 0) {
+        int cnt=0;
+        if(botCount>0) {
+            for(int i=0;i<botCount;i++) {
+                if(botList[i].getDieFrame()<0) {
+                    cnt++;
+                }
+            }
+            if(cnt==0 || playerList[0].getDieFrame()==0) {
                 return true;
             }
+            return false;
+        }
+        cnt=0;
+        for(int i=0;i<playerCount;i++) {
+            if(playerList[i].getDieFrame()<0) {
+                cnt++;
+            }
+        }
+        if(cnt<=1) {
+            return true;
         }
         return false;
     }
@@ -268,7 +284,7 @@ public class GameScene extends SceneManager{
                         }
                     }
                 }
-                for(int k=0;k<botList.length;k++) {
+                for(int k=0;k<botCount;k++) {
                     if(itemMap[i][j] instanceof Explosion) {
                         if(botList[k].getRect().intersects(itemMap[i][j].getRect())) {
                             itemMap[i][j].addEffect(botList[k]);
@@ -395,6 +411,8 @@ public class GameScene extends SceneManager{
     public void drawPlayer(Graphics g, Charakter player) {
         if(player.getDieFrame() > 0) {
             g.drawImage(player.getDieImage(), player.getPosX(), player.getPosY(), observer);
+        } else if(player.getDieFrame() == 0) {
+            return;
         } else {
             g.drawImage(player.getImage(frameID), player.getPosX(), player.getPosY(), observer);
             g.drawImage(player.getBorder(frameID), player.getPosX(), player.getPosY(), observer);
@@ -470,10 +488,12 @@ public class GameScene extends SceneManager{
     }
 
     public void scanBots() {
-        for(int i=0;i<botList.length;i++) {
-            for(int j=0;j<playerCount;j++) {
-                if(botList[i].getRect().intersects(playerList[j].getRect())) {
-                    playerList[j].healthDown(1);
+        for(int i=0;i<botCount;i++) {
+            if(botList[i].getDieFrame() < 0) {
+                for(int j=0;j<playerCount;j++) {
+                    if(botList[i].getRect().intersects(playerList[j].getRect())) {
+                        playerList[j].healthDown(1);
+                    }
                 }
             }
         }
@@ -486,7 +506,7 @@ public class GameScene extends SceneManager{
                 playerList[i].move(checkCollision(playerList[i]));
             }
         }
-        for(int i=0;i<botList.length;i++) {
+        for(int i=0;i<botCount;i++) {
             switch(botList[i].getBotType()) {
                 case 0:
                     break;
@@ -524,7 +544,7 @@ public class GameScene extends SceneManager{
                 for(int i=0;i<playerCount;i++) {
                     drawPlayer(graphik, playerList[i]);
                 }
-                for(int i=0;i<botList.length;i++) {
+                for(int i=0;i<botCount;i++) {
                     drawPlayer(graphik, botList[i]);
                 }
                 drawHUD(graphik);

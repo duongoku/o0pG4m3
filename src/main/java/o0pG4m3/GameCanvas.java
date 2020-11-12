@@ -29,7 +29,6 @@ class GameCanvas extends Canvas {
     private long previousTime = 0;
     private Charakter[] playerList;
     private Charakter[] botList;
-    private Charakter[] emptyBotList;
     private GameScene myGame;
     private MenuScene myMenu;
     private EndGameScene myEndGame;
@@ -84,10 +83,19 @@ class GameCanvas extends Canvas {
             1,
             "00",
             1
+        ), 
+        new Bot(
+            -6, 
+            -7, 
+            -8, 
+            -9, 
+            -10, 
+            mapW - 2,
+            1,
+            "00",
+            0
         )
         };
-
-        emptyBotList = new Charakter[0];
 
         gameKeyListener = new PlayerKeyListener[playerList.length];
         for(int i=0; i<playerList.length; i++) {   
@@ -120,11 +128,11 @@ class GameCanvas extends Canvas {
         }
 
         public void keyPressed(KeyEvent e) {
-            myGame.keyPressed(e, player);
+            myGame.keyPressed(e.getKeyCode(), player);
         }
 
         public void keyReleased(KeyEvent e) {
-            myGame.keyReleased(e, player);
+            myGame.keyReleased(e.getKeyCode(), player);
         }
 
         public void keyTyped(KeyEvent e) {
@@ -138,7 +146,7 @@ class GameCanvas extends Canvas {
         }
 
         public void keyPressed(KeyEvent e) {
-            myMenu.keyPressed(e);
+            myMenu.keyPressed(e.getKeyCode());
         }
 
         public void keyReleased(KeyEvent e) {
@@ -156,7 +164,7 @@ class GameCanvas extends Canvas {
         }
 
         public void keyPressed(KeyEvent e) {
-            myEndGame.keyPressed(e);
+            myEndGame.keyPressed(e.getKeyCode());
         }
 
         public void keyReleased(KeyEvent e) {
@@ -215,14 +223,14 @@ class GameCanvas extends Canvas {
     }
 
     public void resetPVP() {
-        myGame = new GameScene(App.getMapPath(mapID), playerList, 2, emptyBotList, bs, this, sound);
+        myGame = new GameScene(App.getMapPath(mapID), playerList, 2, botList, 0, bs, this, sound);
         for(int i=0; i<playerList.length; i++) {
             addKeyListener(gameKeyListener[i]);
         }
     }
 
     public void resetPVE() {
-        myGame = new GameScene(App.getMapPath(mapID), playerList, 1, botList, bs, this, sound);
+        myGame = new GameScene(App.getMapPath(mapID), playerList, 1, botList, 2, bs, this, sound);
         for(int i=0; i<playerList.length; i++) {
             addKeyListener(gameKeyListener[i]);
         }

@@ -41,9 +41,9 @@ public class MenuScene extends SceneManager{
         menuBorder = new MenuBorder();
     }
 
-    public void keyPressed(KeyEvent e) {
+    public void keyPressed(int keyCode) {
         int offset = optionList.length;
-        if(e.getKeyCode() == KeyEvent.VK_ENTER) {
+        if(keyCode == KeyEvent.VK_ENTER) {
             for(int i=0; i<optionList.length; i++) {
                 if(optionList[i].isSelected()) {
                     switch(optionList[i].getName()) {
@@ -65,10 +65,10 @@ public class MenuScene extends SceneManager{
                 }
             }
         }
-        if(e.getKeyCode() == KeyEvent.VK_DOWN) {
+        if(keyCode == KeyEvent.VK_DOWN) {
             offset += 1;
         }
-        if(e.getKeyCode() == KeyEvent.VK_UP) {
+        if(keyCode == KeyEvent.VK_UP) {
             offset -= 1;
         }
         for(int i=0; i<optionList.length; i++) {

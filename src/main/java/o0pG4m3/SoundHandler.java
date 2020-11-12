@@ -22,13 +22,10 @@ public class SoundHandler {
 
             themeClip = AudioSystem.getClip();
             themeClip.open(themeSound);
-            themeClip.setFramePosition(themeClip.getFrameLength());
             powerupClip = AudioSystem.getClip();
             powerupClip.open(powerupSound);
-            powerupClip.setFramePosition(powerupClip.getFrameLength());
             explosionClip = AudioSystem.getClip();
             explosionClip.open(explosionSound);
-            explosionClip.setFramePosition(explosionClip.getFrameLength());
         } catch(Exception e) {
             e.printStackTrace();
         }
@@ -40,10 +37,12 @@ public class SoundHandler {
     }
 
     public void playPowerupSound() {
-        powerupClip.loop(1);
+        powerupClip.setFramePosition(0);
+        powerupClip.start();
     }
 
     public void playExplosionSound() {
-        explosionClip.loop(1);
+        explosionClip.setFramePosition(0);
+        explosionClip.start();
     }
 }

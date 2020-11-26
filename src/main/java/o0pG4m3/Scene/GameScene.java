@@ -25,6 +25,9 @@ public class GameScene extends SceneManager {
     private Hud myHUD;
     private int hudInsetX = 10;
     private int hudInsetY = 10;
+    private int portalXID;
+    private int portalYID;
+    private String mapPath;
     private int[][] map; //0 == Tile, 1 == Wall, 2 == Bomb, 3 == Obstacle, 4 == New Item
     private int[][] dirMap;
     private boolean[][] checkMap;
@@ -34,10 +37,12 @@ public class GameScene extends SceneManager {
     private Bomb myBomb;
     private Tile myTile;
     private Wall myWall;
+    private Portal myPortal;
     private Charakter[] playerList;
     private int playerCount;
     private Charakter[] botList;
     private int botCount;
+    private int permBotCount;
     private Obstacle myObstacle;
 
     private boolean isOnline;
@@ -55,9 +60,11 @@ public class GameScene extends SceneManager {
         myTile = new Tile();
         myWall = new Wall();
         myObstacle = new Obstacle();
+        this.mapPath = mapPath;
         this.playerList = playerList;
         this.playerCount = playerCount;
         this.botList = botList;
+        this.permBotCount = botCount;
         this.botCount = botCount;
         this.isOnline = isOnline;
         myHUD = new Hud();
@@ -193,6 +200,8 @@ public class GameScene extends SceneManager {
         bombMap = new Bomb[mapH][mapW];
         itemMap = new Item[mapH][mapW];
         checkMap = new boolean[mapH][mapW];
+
+        botCount = permBotCount;
         for(int i=0;i<mapH;i++) {
             mapS = sc.nextLine();
             for(int j=0;j<mapW;j++) {
@@ -203,6 +212,13 @@ public class GameScene extends SceneManager {
                         botList[cnt].setPosY(i*blockH);
                     }
                     cnt++;
+                } else if(mapS.charAt(j) == 'P') {
+                    map[i][j] = 3; //which is a stone
+                    if(permBotCount > 0) {
+                        myPortal = new Portal(j, i);
+                        portalXID = j;
+                        portalYID = i;
+                    }
                 } else {
                     map[i][j] = mapS.charAt(j) - '0';
                 }
@@ -210,9 +226,7 @@ public class GameScene extends SceneManager {
                 itemMap[i][j] = null;
             }
         }
-        if(botCount > cnt) {
-            botCount = cnt;
-        }
+        botCount = Math.min(botCount, cnt);
         //Add walls around
         for(int i=0;i<mapH;i++) {
             map[i][0] = 1;
@@ -285,7 +299,10 @@ public class GameScene extends SceneManager {
                     cnt++;
                 }
             }
-            if(cnt==0 || playerList[0].getDieFrame()==0) {
+            if(playerList[0].getDieFrame()==0) {
+                return true;
+            }
+            if(cnt==0 && mapPath.charAt(9) == 0 && mapPath.charAt(10) == 3) {
                 return true;
             }
             return false;
@@ -300,6 +317,29 @@ public class GameScene extends SceneManager {
             if(isOnline) {
                 pr.println("DISCONNECT");
             }
+            return true;
+        }
+        return false;
+    }
+
+    public boolean areBotsDead() {
+        int cnt=0;
+        if(botCount>0) {
+            for(int i=0;i<botCount;i++) {
+                if(botList[i].getDieFrame()<0) {
+                    cnt++;
+                }
+            }
+            if(cnt==0) {
+                return true;
+            }
+            return false;
+        }
+        return true;
+    }
+
+    public boolean isPlayer0Dead() {
+        if(playerList[0].getDieFrame()==0) {
             return true;
         }
         return false;
@@ -391,8 +431,12 @@ public class GameScene extends SceneManager {
                         } else {
                             itemMap[i][j] = null;
                         }
+                        if(j == portalXID && i == portalYID) {
+                            itemMap[i][j] = null;
+                            map[i][j] = 0;
+                            continue;
+                        }
                     }
-                
                 }
                 for(int k=0;k<playerCount;k++) {
                     if(itemMap[i][j] != null) {
@@ -410,6 +454,24 @@ public class GameScene extends SceneManager {
                         if(botList[k].getRect().intersects(itemMap[i][j].getRect())) {
                             itemMap[i][j].addEffect(botList[k]);
                         }
+                    }
+                }
+            }
+        }
+        if(permBotCount == 0) {
+            if(botCount > 0) {
+                if(areBotsDead() && (!isPlayer0Dead())) {
+                    if(playerList[0].getXID(blockW) == portalXID && playerList[0].getYID(blockH) == portalYID) {
+                        int cnt = 10*(mapPath.charAt(9) - '0') + (mapPath.charAt(10) - '0');
+                        if(cnt > 2) {
+                            return;
+                        }
+                        cnt++;
+                        playerList[0].reset();
+                        for(int i=0; i<botCount; i++) {   
+                            botList[i].reset();
+                        }
+                        loadMap(App.getMapPath(cnt));
                     }
                 }
             }
@@ -530,6 +592,13 @@ public class GameScene extends SceneManager {
                 }
             }
         }
+    }
+
+    public void drawPortal(Graphics g) {
+        if(map[portalYID][portalXID] > 0) {
+            return;
+        }
+        g.drawImage(myPortal.getImage(frameID), portalXID*blockW, portalYID*blockH, observer);
     }
 
     public void drawPlayer(Graphics g, Charakter player) {
@@ -699,6 +768,9 @@ public class GameScene extends SceneManager {
                 graphik = bs.getDrawGraphics();
                 graphik.clearRect(0, 0, mapW*blockW, mapH*blockH);
                 drawBlocks(graphik);
+                if(permBotCount == 0) {
+                    drawPortal(graphik);
+                }
                 drawItems(graphik);
                 for(int i=0;i<playerCount;i++) {
                     drawPlayer(graphik, playerList[i]);

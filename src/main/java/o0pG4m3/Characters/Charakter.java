@@ -149,6 +149,9 @@ public abstract class Charakter {
     }
 
     public void removeDirectionID(int keyKode) {
+        if(directionIDListSize == 1) {
+            return;
+        } 
         if(directionIDListSize == 2) {
             directionIDList[0] = directionIDList[1];
         } else {

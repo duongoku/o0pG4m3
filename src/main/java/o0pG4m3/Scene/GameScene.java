@@ -467,7 +467,7 @@ public class GameScene extends SceneManager {
                 }
             }
         }
-        if(permBotCount == 0) {
+        if(permBotCount > 0) {
             if(botCount > 0) {
                 if(areBotsDead() && (!isPlayer0Dead())) {
                     if(playerList[0].getXID(blockW) == portalXID && playerList[0].getYID(blockH) == portalYID) {
@@ -777,7 +777,7 @@ public class GameScene extends SceneManager {
                 graphik = bs.getDrawGraphics();
                 graphik.clearRect(0, 0, mapW*blockW, mapH*blockH);
                 drawBlocks(graphik);
-                if(permBotCount == 0) {
+                if(permBotCount > 0) {
                     drawPortal(graphik);
                 }
                 drawItems(graphik);

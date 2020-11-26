@@ -46,6 +46,7 @@ public class GameScene extends SceneManager {
     private Obstacle myObstacle;
 
     private boolean isOnline;
+    private boolean enoughPlayer;
     private int onlinePlayerID;
     private Socket socket = null;
     private InputStreamReader in = null;
@@ -120,8 +121,10 @@ public class GameScene extends SceneManager {
         }
         args = str.split(" ", -1);
         if(args[0].equals("NEP")) {
+            enoughPlayer = false;
             return;
         }
+        enoughPlayer = true;
         for(int i=0; i<playerCount; i++) {
             int x = Integer.parseInt(args[i*3]);
             int y = Integer.parseInt(args[i*3+1]);
@@ -268,6 +271,9 @@ public class GameScene extends SceneManager {
     }
 
     public void keyPressedOnline(int keyCode) {
+        if(!enoughPlayer) {
+            return;
+        }
         if(keyCode == KeyEvent.VK_UP
         || keyCode == KeyEvent.VK_DOWN
         || keyCode == KeyEvent.VK_LEFT
@@ -280,6 +286,9 @@ public class GameScene extends SceneManager {
     }
 
     public void keyReleasedOnline(int keyCode) {
+        if(!enoughPlayer) {
+            return;
+        }
         if(keyCode == KeyEvent.VK_UP
         || keyCode == KeyEvent.VK_DOWN
         || keyCode == KeyEvent.VK_LEFT

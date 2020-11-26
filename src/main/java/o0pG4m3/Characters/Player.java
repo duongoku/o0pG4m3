@@ -28,6 +28,11 @@ public class Player extends Charakter {
         frameOrderLeft = new int[]{2, 5, 5, 6, 6};
         frameOrderRight = new int[]{11, 7, 7, 8, 8};
 
+        rawImage = new BufferedImage[12];
+        for(int i=0;i<12;i++) {
+            rawImage[i] = image.getSubimage(i*width, 0, width, height);
+        }
+
         subimageUp = new BufferedImage[frameOrderUp.length];
         for(int i=0;i<frameOrderUp.length;i++) {
             subimageUp[i] = image.getSubimage(frameOrderUp[i]*width, 0, width, height);

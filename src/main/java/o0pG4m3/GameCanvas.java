@@ -28,11 +28,13 @@ class GameCanvas extends Canvas {
     private long currentTime = 0;
     private long previousTime = 0;
     private Charakter[] playerList;
+    private Charakter[] onlinePlayerList;
     private Charakter[] botList;
     private GameScene myGame;
     private MenuScene myMenu;
     private EndGameScene myEndGame;
     private PlayerKeyListener[] gameKeyListener;
+    private OnlinePlayerKeyListener onlineGameKeyListener;
     private MenuKeyListener menuKeyListener;
     private EndGameKeyListener endGameKeyListener;
     private int gameState;
@@ -40,10 +42,12 @@ class GameCanvas extends Canvas {
     private SoundHandler sound;
 
     private static final int MAINMENU = 0;
-    private static final int GAMEPVP = 1;
+    private static final int GAMEPVPOFFLINE = 1;
     private static final int GAMEPVE = 2;
     private static final int GAMEEND = 3;
     private static final int RESTART = 4;
+    private static final int GAMEPVPONLINE = 5;
+    private static final int HOWTOPLAY = 6;
 
     public GameCanvas() {
         setSize(mapW*blockW, mapH*blockH);
@@ -72,6 +76,29 @@ class GameCanvas extends Canvas {
         )
         };
 
+        onlinePlayerList = new Charakter[]{
+        new Player(
+            KeyEvent.VK_UP, 
+            KeyEvent.VK_DOWN, 
+            KeyEvent.VK_LEFT, 
+            KeyEvent.VK_RIGHT, 
+            KeyEvent.VK_SPACE, 
+            1, 
+            1,
+            "00"
+        ),
+        new Player(
+            KeyEvent.VK_UP, 
+            KeyEvent.VK_DOWN, 
+            KeyEvent.VK_LEFT, 
+            KeyEvent.VK_RIGHT, 
+            KeyEvent.VK_SPACE, 
+            mapW - 2,
+            mapH - 2,
+            "01"
+        )
+        };
+
         botList = new Charakter[]{
         new Bot(
             -1, 
@@ -81,7 +108,29 @@ class GameCanvas extends Canvas {
             -5, 
             mapW - 2,
             1,
+            "01",
+            1
+        ), 
+        new Bot(
+            -6, 
+            -7, 
+            -8, 
+            -9, 
+            -10, 
+            mapW - 2,
+            1,
             "00",
+            0
+        ),
+        new Bot(
+            -1, 
+            -2, 
+            -3, 
+            -4, 
+            -5, 
+            mapW - 2,
+            1,
+            "01",
             1
         ), 
         new Bot(
@@ -112,6 +161,9 @@ class GameCanvas extends Canvas {
         for(int i=0; i<playerList.length; i++) {   
             playerList[i].reset();
         }
+        for(int i=0; i<onlinePlayerList.length; i++) {   
+            onlinePlayerList[i].reset();
+        }
     }
 
     public void resetBots() {
@@ -133,6 +185,24 @@ class GameCanvas extends Canvas {
 
         public void keyReleased(KeyEvent e) {
             myGame.keyReleased(e.getKeyCode(), player);
+        }
+
+        public void keyTyped(KeyEvent e) {
+
+        }
+    }
+
+    public class OnlinePlayerKeyListener implements KeyListener {
+        public OnlinePlayerKeyListener() {
+
+        }
+
+        public void keyPressed(KeyEvent e) {
+            myGame.keyPressedOnline(e.getKeyCode());
+        }
+
+        public void keyReleased(KeyEvent e) {
+            myGame.keyReleasedOnline(e.getKeyCode());
         }
 
         public void keyTyped(KeyEvent e) {
@@ -196,8 +266,12 @@ class GameCanvas extends Canvas {
             case MAINMENU:
                 showMenu();
                 break;
-            case GAMEPVP:
-                resetPVP();
+            case GAMEPVPOFFLINE:
+                resetPVPOffline();
+                showGame();
+                break;
+            case GAMEPVPONLINE:
+                resetPVPOnline();
                 showGame();
                 break;
             case GAMEPVE:
@@ -205,6 +279,7 @@ class GameCanvas extends Canvas {
                 showGame();
                 break;
             case GAMEEND:
+                resetEndGame();
                 showEndGame();
                 break;
             default:
@@ -222,18 +297,22 @@ class GameCanvas extends Canvas {
         addKeyListener(endGameKeyListener);
     }
 
-    public void resetPVP() {
-        myGame = new GameScene(App.getMapPath(mapID), playerList, 2, botList, 0, bs, this, sound);
+    public void resetPVPOffline() {
+        myGame = new GameScene(App.getMapPath(mapID), playerList, 2, botList, 0, bs, this, sound, false);
         for(int i=0; i<playerList.length; i++) {
             addKeyListener(gameKeyListener[i]);
         }
     }
 
+    public void resetPVPOnline() {
+        myGame = new GameScene(App.getMapPath(mapID), onlinePlayerList, 2, botList, 0, bs, this, sound, true);
+        onlineGameKeyListener = new OnlinePlayerKeyListener();
+        addKeyListener(onlineGameKeyListener);
+    }
+
     public void resetPVE() {
-        myGame = new GameScene(App.getMapPath(mapID), playerList, 1, botList, 2, bs, this, sound);
-        for(int i=0; i<playerList.length; i++) {
-            addKeyListener(gameKeyListener[i]);
-        }
+        myGame = new GameScene(App.getMapPath(mapID), playerList, 1, botList, 4, bs, this, sound, false);
+        addKeyListener(gameKeyListener[0]);
     }
 
     public void removeAllActionLisenter() {
@@ -242,6 +321,7 @@ class GameCanvas extends Canvas {
         }
         removeKeyListener(menuKeyListener);
         removeKeyListener(endGameKeyListener);
+        removeKeyListener(onlineGameKeyListener);
     }
 
     public void showMenu() {
@@ -291,7 +371,6 @@ class GameCanvas extends Canvas {
     }
 
     public void showEndGame() {
-        resetEndGame();
         myEndGame.setGameState(gameState);
         int delay = 30;
         ActionListener taskPerformer = new ActionListener() {

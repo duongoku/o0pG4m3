@@ -2,8 +2,8 @@ package o0pG4m3.Items;
 
 import java.awt.image.*;
 import java.awt.*;
-import o0pG4m3.Characters.*;
 
+import o0pG4m3.Characters.*;
 
 public abstract class Item {
     protected final int width = 40;

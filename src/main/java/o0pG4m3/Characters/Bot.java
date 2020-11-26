@@ -23,10 +23,10 @@ public class Bot extends Charakter {
             System.out.println("Could not find \"Bot_Border.png\" file");
         }
 
-        frameOrderUp = new int[]{3, 4, 4, 5, 5};
-        frameOrderDown = new int[]{0, 1, 1, 2, 2};
-        frameOrderLeft = new int[]{6, 6, 6, 7, 7};
-        frameOrderRight = new int[]{8, 8, 8, 9, 9};
+        frameOrderUp = new int[]{3, 4, 4, 4, 5, 5, 5};
+        frameOrderDown = new int[]{0, 1, 1, 1, 2, 2, 2};
+        frameOrderLeft = new int[]{6, 6, 6, 6, 7, 7, 7};
+        frameOrderRight = new int[]{8, 8, 8, 8, 9, 9, 9};
 
         subimageUp = new BufferedImage[frameOrderUp.length];
         for(int i=0;i<frameOrderUp.length;i++) {

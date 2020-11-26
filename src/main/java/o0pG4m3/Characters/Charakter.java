@@ -33,6 +33,7 @@ public abstract class Charakter {
     protected Rectangle moveRect;
     protected int moveSpeed;
     protected int moveSpeedMAX;
+    protected int moveSpeedMIN;
     protected BufferedImage image;
     protected BufferedImage border;
     protected BufferedImage dieImage;
@@ -41,6 +42,9 @@ public abstract class Charakter {
     protected BufferedImage[] subimageDown;
     protected BufferedImage[] subimageLeft;
     protected BufferedImage[] subimageRight;
+    protected BufferedImage[] rawImage;
+
+    protected int rawImageID;
 
     public final int KEY_UP;
     public final int KEY_DOWN;
@@ -91,6 +95,7 @@ public abstract class Charakter {
         bombAmountMAX = 5;
         moveSpeed = 4;
         moveSpeedMAX = 10;
+        moveSpeedMIN = 2;
         
         dieFrame = -1;
         directionIDList = new int[8];
@@ -170,6 +175,7 @@ public abstract class Charakter {
 
     public void speedUp(int n) {
         moveSpeed += n;
+        moveSpeed = Math.max(moveSpeed, moveSpeedMIN);
         moveSpeed = Math.min(moveSpeed, moveSpeedMAX);
     }
 
@@ -345,6 +351,32 @@ public abstract class Charakter {
         return null;
     }
 
+    public int getImageID(int frameID) {
+        frameID %= (frameOrderUp.length-1);
+        frameID += 1;
+        if(directionIDListSize == 1) {
+            frameID = 0;
+        }
+        if(directionIDList[directionIDListSize-1] == KEY_UP) {
+            return frameOrderUp[frameID];
+        } else if(directionIDList[directionIDListSize-1] == KEY_DOWN) {
+            return frameOrderDown[frameID];
+        } else if(directionIDList[directionIDListSize-1] == KEY_LEFT) {
+            return frameOrderLeft[frameID];
+        } else if(directionIDList[directionIDListSize-1] == KEY_RIGHT) {
+            return frameOrderRight[frameID];
+        }
+        return 0;
+    }
+
+    public void setRawImageID(int rawImageID) {
+        this.rawImageID = rawImageID;
+    }
+
+    public BufferedImage getRawImage() {
+        return rawImage[rawImageID];
+    }
+
     public BufferedImage getPortrait() {
         return subimageDown[0];
     }
@@ -352,6 +384,13 @@ public abstract class Charakter {
     public BufferedImage getDieImage() {
         dieFrame--;
         return dieSubimage[dieFrame];
+    }
+
+    public void countsDieFrame() {
+        if(dieFrame == -1) {
+            return;
+        }
+        dieFrame--;
     }
 
     public BufferedImage getBorder(int frameID) {

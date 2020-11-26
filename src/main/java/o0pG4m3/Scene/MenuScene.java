@@ -18,6 +18,7 @@ import o0pG4m3.Characters.*;
 public class MenuScene extends SceneManager{
     protected BufferedImage bg;
     protected MenuOption[] optionList;
+    protected MenuOption[] prevOptionList;
     protected MenuBorder menuBorder;
     protected int cornerX = 437;
     protected int cornerY = 277;
@@ -31,12 +32,12 @@ public class MenuScene extends SceneManager{
         }
 
         optionList = new MenuOption[]{
-            new MenuOption("Start"), 
             new MenuOption("PVP"), 
             new MenuOption("PVE")
         };
 
         optionList[0].setSelected(true);
+        prevOptionList = optionList;
 
         menuBorder = new MenuBorder();
     }
@@ -48,10 +49,16 @@ public class MenuScene extends SceneManager{
                 if(optionList[i].isSelected()) {
                     switch(optionList[i].getName()) {
                         case "PVP":
-                            gameState = GAMEPVP;
+                            changeToPVPMenu();
                             break;
                         case "PVE":
                             gameState = GAMEPVE;
+                            break;
+                        case "Offline":
+                            gameState = GAMEPVPOFFLINE;
+                            break;
+                        case "Online":
+                            gameState = GAMEPVPONLINE;
                             break;
                         case "Restart":
                             gameState = RESTART;
@@ -59,11 +66,15 @@ public class MenuScene extends SceneManager{
                         case "Main Menu":
                             gameState = MAINMENU;
                             break;
+                        case "Back":
+                            back();
+                            break;
                         default:
                             break;
                     }
                 }
             }
+            return;
         }
         if(keyCode == KeyEvent.VK_DOWN) {
             offset += 1;
@@ -90,6 +101,10 @@ public class MenuScene extends SceneManager{
         }
     }
 
+    public void back() {
+        optionList = prevOptionList;
+    }
+
     public void drawOptionBorder(Graphics g) {
         for(int i=0; i<optionList.length; i++) {
             if(optionList[i].isSelected()) {
@@ -101,6 +116,16 @@ public class MenuScene extends SceneManager{
                 break;
             }
         }
+    }
+
+    public void changeToPVPMenu() {
+        prevOptionList = optionList;
+        optionList = new MenuOption[]{
+            new MenuOption("Offline"), 
+            new MenuOption("Online"), 
+            new MenuOption("Back")
+        };
+        optionList[0].setSelected(true);
     }
 
     public void render() {

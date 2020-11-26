@@ -60,4 +60,8 @@ public class App {
     public static int getRandomInt(int n) {
         return ((int)(100000 * Math.random()))%n;
     }
+
+    public static int getRandomInt(int n, int x, int y, int seed) {
+        return (seed*x*y + x*15 + y*25)%n;
+    }
 }

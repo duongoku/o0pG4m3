@@ -24,10 +24,12 @@ public class SceneManager {
     protected int gameState;
 
     protected static final int MAINMENU = 0;
-    protected static final int GAMEPVP = 1;
+    protected static final int GAMEPVPOFFLINE = 1;
     protected static final int GAMEPVE = 2;
     protected static final int GAMEEND = 3;
     protected static final int RESTART = 4;
+    protected static final int GAMEPVPONLINE = 5;
+    protected static final int HOWTOPLAY = 6;
 
     public SceneManager(BufferStrategy bs, ImageObserver observer, SoundHandler sound) {
         this.observer = observer;

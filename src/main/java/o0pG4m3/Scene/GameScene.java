@@ -1,6 +1,7 @@
 package o0pG4m3.Scene;
 
 import java.io.*;
+import java.net.*;
 import java.awt.*;
 import java.util.*;
 import java.awt.event.*;
@@ -8,15 +9,17 @@ import java.awt.image.*;
 
 import java.lang.Math;
 import javax.imageio.ImageIO;
+import java.awt.event.KeyEvent;
 
 import o0pG4m3.*;
 import o0pG4m3.Items.*;
 import o0pG4m3.Blocks.*;
 import o0pG4m3.Characters.*;
 
-public class GameScene extends SceneManager{
+public class GameScene extends SceneManager {
     private int mapW;
     private int mapH;
+    private int mapSeed;
     private int blockW = 40;
     private int blockH = 40;
     private Hud myHUD;
@@ -37,7 +40,16 @@ public class GameScene extends SceneManager{
     private int botCount;
     private Obstacle myObstacle;
 
-    public GameScene(String mapPath, Charakter[] playerList, int playerCount, Charakter[] botList, int botCount, BufferStrategy bs, ImageObserver observer, SoundHandler sound) {
+    private boolean isOnline;
+    private int onlinePlayerID;
+    private Socket socket = null;
+    private InputStreamReader in = null;
+    private BufferedReader bf = null;
+    private PrintWriter pr = null;
+    private String address;
+    private int port;
+
+    public GameScene(String mapPath, Charakter[] playerList, int playerCount, Charakter[] botList, int botCount, BufferStrategy bs, ImageObserver observer, SoundHandler sound, boolean isOnline) {
         super(bs, observer, sound);
         myBomb = new Bomb();
         myTile = new Tile();
@@ -47,8 +59,76 @@ public class GameScene extends SceneManager{
         this.playerCount = playerCount;
         this.botList = botList;
         this.botCount = botCount;
+        this.isOnline = isOnline;
         myHUD = new Hud();
         loadMap(mapPath);
+        if(isOnline) {
+            initOnline();
+        }
+    }
+
+    public void initOnline() {
+        try {
+            Scanner sc = new Scanner(new File("assets/ServerInfo.txt"));
+            address = sc.nextLine();
+            port = sc.nextInt();
+            sc.close();
+            socket = new Socket(address, port);
+            pr = new PrintWriter(socket.getOutputStream(), true);
+            in = new InputStreamReader(socket.getInputStream());
+            bf = new BufferedReader(in);
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
+        pr.println("JOIN");
+        try {
+            onlinePlayerID = Integer.parseInt(bf.readLine());
+        } catch(Exception e) {
+            onlinePlayerID = 0;
+            e.printStackTrace();
+        }
+        pr.println("SEED");
+        try {
+            mapSeed = Integer.parseInt(bf.readLine());
+        } catch(Exception e) {
+            mapSeed = 1;
+            e.printStackTrace();
+        }
+    }
+
+    public void getOnline() {
+        String str = "GET";
+        String[] args;
+        str += " ";
+        str += String.valueOf(playerList[onlinePlayerID].getPosX());
+        str += " ";
+        str += String.valueOf(playerList[onlinePlayerID].getPosY());
+        str += " ";
+        str += String.valueOf(playerList[onlinePlayerID].getImageID(frameID));
+        pr.println(str);
+        try {
+            str = bf.readLine();
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
+        args = str.split(" ", -1);
+        if(args[0].equals("NEP")) {
+            return;
+        }
+        for(int i=0; i<playerCount; i++) {
+            int x = Integer.parseInt(args[i*3]);
+            int y = Integer.parseInt(args[i*3+1]);
+            int j = Integer.parseInt(args[i*3+2]);
+            playerList[i].setPosX(x);
+            playerList[i].setPosY(y);
+            playerList[i].setRawImageID(j);
+        }
+        for(int i=0; i<playerCount; i++) {
+            int k=Integer.parseInt(args[i+playerCount*3]);
+            if(k==1) {
+                keyPressed(playerList[i].KEY_BOMB, playerList[i]);
+            }
+        }
     }
 
     public void validatePlayer() {
@@ -64,7 +144,7 @@ public class GameScene extends SceneManager{
             }
             if(playerList[i].getYID(blockH) > (mapH-2)) {
                 playerList[i].setPosY((mapW-2)*blockH);
-            }
+            }   
         }
     }
 
@@ -96,6 +176,7 @@ public class GameScene extends SceneManager{
     public void loadMap(String mapPath) {
         Scanner sc = null;
         String mapS = null;
+        int cnt = 0;
 
         try {
             sc = new Scanner(new File(mapPath));
@@ -115,10 +196,22 @@ public class GameScene extends SceneManager{
         for(int i=0;i<mapH;i++) {
             mapS = sc.nextLine();
             for(int j=0;j<mapW;j++) {
-                map[i][j] = mapS.charAt(j) - '0';
+                if(mapS.charAt(j) == 'B') {
+                    map[i][j] = 0;
+                    if(cnt < botCount) {
+                        botList[cnt].setPosX(j*blockW);
+                        botList[cnt].setPosY(i*blockH);
+                    }
+                    cnt++;
+                } else {
+                    map[i][j] = mapS.charAt(j) - '0';
+                }
                 bombMap[i][j] = null;
                 itemMap[i][j] = null;
             }
+        }
+        if(botCount > cnt) {
+            botCount = cnt;
         }
         //Add walls around
         for(int i=0;i<mapH;i++) {
@@ -160,6 +253,30 @@ public class GameScene extends SceneManager{
         }
     }
 
+    public void keyPressedOnline(int keyCode) {
+        if(keyCode == KeyEvent.VK_UP
+        || keyCode == KeyEvent.VK_DOWN
+        || keyCode == KeyEvent.VK_LEFT
+        || keyCode == KeyEvent.VK_RIGHT) {
+            playerList[onlinePlayerID].addDirectionID(keyCode);
+        }
+        if(keyCode == KeyEvent.VK_SPACE) {
+            pr.println("MOV " + String.valueOf(keyCode));
+        }
+    }
+
+    public void keyReleasedOnline(int keyCode) {
+        if(keyCode == KeyEvent.VK_UP
+        || keyCode == KeyEvent.VK_DOWN
+        || keyCode == KeyEvent.VK_LEFT
+        || keyCode == KeyEvent.VK_RIGHT) {
+            playerList[onlinePlayerID].removeDirectionID(keyCode);
+        }
+        if(keyCode == KeyEvent.VK_SPACE) {
+            pr.println("STP " + String.valueOf(keyCode));
+        }
+    }
+
     public boolean isEnded() {
         int cnt=0;
         if(botCount>0) {
@@ -180,6 +297,9 @@ public class GameScene extends SceneManager{
             }
         }
         if(cnt<=1) {
+            if(isOnline) {
+                pr.println("DISCONNECT");
+            }
             return true;
         }
         return false;
@@ -252,6 +372,7 @@ public class GameScene extends SceneManager{
             for(int j=0;j<mapW;j++) {
                 if(bombMap[i][j] != null) {
                     if(bombMap[i][j].tickTock()) {
+                        sound.playExplosionSound();
                         detonate(j, i, bombMap[i][j].getPower());
                     }
                 }
@@ -296,7 +417,12 @@ public class GameScene extends SceneManager{
     }
 
     public void setNewItem(int xID, int yID) {
-        int randomInt = App.getRandomInt(4);
+        int randomInt;
+        if(isOnline) {
+            randomInt = App.getRandomInt(4, xID, yID, mapSeed);
+        } else {
+            randomInt = App.getRandomInt(4);
+        }
         switch(randomInt) {
             case 0:
                 itemMap[yID][xID] = new ExplodeUp(xID, yID);
@@ -314,8 +440,6 @@ public class GameScene extends SceneManager{
     }
 
     public void detonate(int xID, int yID, int power) {
-        sound.playExplosionSound();
-
         bombMap[yID][xID].getOwner().addBomb();
         bombMap[yID][xID] = null;
         map[yID][xID] = 0;
@@ -414,7 +538,11 @@ public class GameScene extends SceneManager{
         } else if(player.getDieFrame() == 0) {
             return;
         } else {
-            g.drawImage(player.getImage(frameID), player.getPosX(), player.getPosY(), observer);
+            if(isOnline) {
+                g.drawImage(player.getRawImage(), player.getPosX(), player.getPosY(), observer);
+            } else {
+                g.drawImage(player.getImage(frameID), player.getPosX(), player.getPosY(), observer);
+            }
             g.drawImage(player.getBorder(frameID), player.getPosX(), player.getPosY(), observer);
         }
     }
@@ -445,7 +573,7 @@ public class GameScene extends SceneManager{
     public void createDirectionMap(Charakter bot, Charakter player) {
         for(int i=0;i<mapH;i++) {
             for(int j=0;j<mapW;j++) {
-                dirMap[i][j] = bot.KEY_DOWN;
+                dirMap[i][j] = 9999;
                 checkMap[i][j] = false;
             }
         }
@@ -476,6 +604,31 @@ public class GameScene extends SceneManager{
                 dirMap[yID - 1][xID] = bot.KEY_DOWN;
                 checkMap[yID - 1][xID] = true;
                 myQueue.add(new Pair(xID, yID - 1));
+            }
+        }
+        int dirToPlayer = 1;
+        if(bot.getXID(blockW) > xID) {
+            dirToPlayer = 2;
+        } else if(bot.getXID(blockW) <= xID) {
+            dirToPlayer = 3;
+        } else if(bot.getYID(blockH) > yID) {
+            dirToPlayer = 0;
+        } else if(bot.getYID(blockH) <= yID) {
+            dirToPlayer = 1;
+        }
+        for(int i=0;i<mapH;i++) {
+            for(int j=0;j<mapW;j++) {
+                if(dirMap[i][j] == 9999) {
+                    if(dirToPlayer == 0) {
+                        dirMap[i][j] = bot.KEY_UP;
+                    } else if(dirToPlayer == 1) {
+                        dirMap[i][j] = bot.KEY_DOWN;
+                    } else if(dirToPlayer == 2) {
+                        dirMap[i][j] = bot.KEY_LEFT;
+                    } else if(dirToPlayer == 3) {
+                        dirMap[i][j] = bot.KEY_RIGHT;;
+                    }
+                }
             }
         }
         // for(int i=0;i<mapH;i++) {
@@ -512,6 +665,9 @@ public class GameScene extends SceneManager{
                     break;
                 case 1:
                     createDirectionMap(botList[i], playerList[0]);
+                    if(frameID % 30 == 0) {
+                        botList[i].speedUp(App.getRandomInt(2) - 1);
+                    }
                     botList[i].setDirectionID(dirMap[botList[i].getYID(blockH)][botList[i].getXID(blockW)]);
                 default:
                     break;
@@ -532,6 +688,9 @@ public class GameScene extends SceneManager{
     }
 
     public void render() {
+        if(isOnline) {
+            getOnline();
+        }
         validatePlayer();
         validateBot();
         preprocessing();
